@@ -1,0 +1,53 @@
+#let's specify Version number of docker compose 
+version: '3'
+
+#services we wish to run in docker 
+services:
+  #Database services for wordpress we will use mysql
+  mysql_db:
+    container_name: mysql_container
+    image: mysql:5.7 #mysql image from docker hub
+    restart: always #restart policy that whenever container destroy it will automatically start this could be happen when you restart your computer
+    environment: # four mendatory environment variable to run mysql container refered from docker documentation
+      MYSQL_ROOT_PASSWORD: password_of_your_choice
+      MYSQL_DATABASE: wordpress_db # DATABASE NAME OF YOUR CHOICE
+      MYSQL_USER: wordpress_user    # USER OF YOUR CHOICE
+      MYSQL_PASSWORD: wordpress_user_password # PASSWORD OF YOUR CHOICE
+    volumes:
+      - mysql:/var/lib/mysql  #WE WILL MAKE THIS VOLUME PERSISTENT SO OUR DATA WILL SURVIVE BETWEEN CONTAINER RESTART OR DESTROY WE WILL DEFINE IT IN Separate SECTION
+
+  #CMS services we will use wordpress
+  wordpress:
+    depends_on:   #wordpress container will only start when mysql_db service is already started
+      - mysql_db
+    container_name: wordpress_container
+    image: wordpress:latest #apache wordpress image from docker hub
+    restart: always   #restart policy that whenever container destroy it will automatically start this could be happen when you restart your computer
+    ports:
+      - "8000:80"     #external port : docker port, apache web server run on default port 80 we are exposing it to external port 8000
+    environment: # four mendatory environment variable to run wordpress container refered from docker documentation
+      WORDPRESS_DB_HOST: mysql_db:3306  # default running port of mysql is 3306
+      WORDPRESS_DB_USER: wordpress_user  # KEEPING IT SAME AS MYSQL
+      WORDPRESS_DB_PASSWORD: wordpress_user_password # KEEPING IT SAME AS MYSQL
+      WORDPRESS_DB_NAME: wordpress_db  # KEEPING IT SAME AS MYSQL
+    volumes:
+      - "./:/var/www/html"  #THIS IS VOLUME OF WORDPRESS WEBSITE THAT WE CAN ACCESS IN OUR COMPUTER ./ MEANS SAME DIRECTORY WHERE DOCKER COMPOSE FILE IS PRESENT
+            
+  #Database access phpmyadmin services for working with database
+  phpmyadmin:
+    depends_on:  #phpmyadmin container will only start when mysql_db service is already started
+      - mysql_db
+    container_name: phpmyadmin_container
+    image: phpmyadmin/phpmyadmin #phpmyadmin image from docker hub
+    restart: always   #restart policy that whenever container destroy it will automaticall start this could be happen when you restart your computer
+    ports:
+      - 3333:80 #external port : docker port, apache web server run on default port 80 we are exposing it to external port 3333
+    environment: # Two mendatory environment variable to run phpmyadmin container refered from docker documentation
+      PMA_HOST: mysql_db  # KEEPING IT SAME AS MYSQL YOU CAN ALSO TAKE CONTAINER NAME INSTEAD OF SERVICE NAME
+      MYSQL_ROOT_PASSWORD: password_of_your_choice # KEEPING IT SAME AS MYSQL
+    volumes:
+      - "./:/var/www/html/phpmyadmin" # ./ MEANS SAME DIRECTORY WHERE DOCKER COMPOSE FILE IS PRESENT
+
+#persistent volumes 
+volumes:
+  mysql: {} # REFER MYSQL VOLUME SECTION THIS IS MADE PERSISTENT HERE.
